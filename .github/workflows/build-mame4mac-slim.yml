@@ -1,0 +1,52 @@
+name: Build slim MAME4mac (arm64, unsigned)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: MAME4iOS
+
+      - name: Checkout slim MAME core
+        uses: actions/checkout@v4
+        with:
+          repository: getguruhat/mame
+          path: MAME
+
+      - name: Build slim libmame (arm64 Mac Catalyst)
+        working-directory: MAME
+        run: |
+          cp keep-drivers.flt slim.flt
+          ./make-ios.sh mac-catalyst-arm64 SOURCEFILTER=slim.flt
+          cp libmame-mac-arm64.a libmame-mac.a
+          ls -lh libmame-mac.a
+
+      - name: Build the app
+        working-directory: MAME4iOS
+        run: |
+          printf 'MAMELIB = libmame\n' > xcode/MAME4iOS/Developer.xcconfig
+          xcodebuild -project MAME4iOS.xcodeproj -scheme "MAME4iOS Release" \
+            -destination 'platform=macOS,variant=Mac Catalyst' \
+            -derivedDataPath build ARCHS=arm64 ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build 2>&1 | tail -60
+          APP=$(find build/Build/Products -maxdepth 2 -name '*.app' | head -1)
+          echo "APP=$APP"
+          codesign --force --deep --sign - "$APP"
+          du -sh "$APP"
+          ditto -c -k --keepParent "$APP" ../MAME4mac-slim.zip
+          ls -lh ../MAME4mac-slim.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MAME4mac-slim
+          path: MAME4mac-slim.zip
+          if-no-files-found: error
