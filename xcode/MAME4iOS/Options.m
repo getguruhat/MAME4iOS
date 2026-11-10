@@ -131,11 +131,7 @@
         _soundValue = 5;
 
         _sticktype = 0;
-#if TARGET_OS_MACCATALYST
-        _numbuttons = 1;   // "0 Buttons" in fullscreen
-#else
         _numbuttons = 0;
-#endif
         _aplusb = 0;
         _cheats = 1;
         
@@ -179,6 +175,13 @@
         _hapticButtonFeedback = 1;
         
         _useDRC = 0;
+
+#if TARGET_OS_MACCATALYST
+        // values taken from the owner's exported options_v23.bin
+        _animatedButtons = 0;
+        _filterClones = 1;           // hide clones
+        _touchControlsOpacity = 0.0; // on-screen controls invisible
+#endif
     }
     else
     {
@@ -230,7 +233,7 @@
         _soundValue =  [([optionsDict objectForKey:@"soundValue"] ?: @(5)) intValue];
         
         _sticktype  =  [[optionsDict objectForKey:@"sticktype"] intValue];
-        _numbuttons  =  [([optionsDict objectForKey:@"numbuttons"] ?: @(TARGET_OS_MACCATALYST ? 1 : 0)) intValue];   // 1 = "0 Buttons"
+        _numbuttons  =  [([optionsDict objectForKey:@"numbuttons"] ?: @(0)) intValue];
         _aplusb  =  [[optionsDict objectForKey:@"aplusb"] intValue];
         _cheats  =  [[optionsDict objectForKey:@"cheats"] intValue];
         
