@@ -1,3 +1,22 @@
+# MAME4mac Slim 1.0
+
+This fork ships **MAME4mac Slim 1.0**: a slim, unsigned, Apple Silicon (arm64) build of MAME4iOS for the Mac (Mac Catalyst), by [GuruHat](https://guruhat.com).
+
+- **Slim:** includes only the MAME drivers listed in [keep-drivers.flt](https://github.com/getguruhat/mame/blob/master/keep-drivers.flt) (Capcom CPS1/CPS2, Neo Geo, Konami, Sega, Nintendo and a few others). Other games will not run.
+- **Mac defaults:** opens fullscreen with no touch controls, hides clones and BIOS entries.
+- **No ROMs included.** Put your own ROMs in `~/Documents/roms`.
+- **iCloud sync is disabled.** The app is not notarized by Apple: right-click > Open the first time.
+
+Install:
+
+```
+brew install --cask getguruhat/tap/mame4mac-slim
+```
+
+This is an unofficial build. MAME is a trademark of its owner. Source is GPL-2.0-or-later, same as upstream. The original README follows.
+
+---
+
 # MAME4iOS
 
 Original Author: David Valdeita (Seleuco)  
