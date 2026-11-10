@@ -38,6 +38,9 @@ jobs:
 
           __attribute__((weak)) int myosd_enumerate_7z(const char* path, int load_data_flag, void* callback_ptr, void (*callback)(void* callback_ptr, const uint16_t* name, size_t len, const uint8_t* data, size_t size)) { return -1; }
           STUB
+          # no iCloud entitlement in an unsigned build: CloudKit traps at launch, so disable cloud sync
+          sed -i '' 's|^+(void)updateCloudStatus {|+(void)updateCloudStatus { _status = CloudSyncStatusNotEntitled; return;|' xcode/MAME4iOS/CloudSync.m
+          grep -n 'updateCloudStatus {' xcode/MAME4iOS/CloudSync.m
           printf 'MAMELIB = libmame\n' > xcode/MAME4iOS/Developer.xcconfig
           xcodebuild -project MAME4iOS.xcodeproj -scheme "MAME4iOS Release" \
             -destination 'platform=macOS,variant=Mac Catalyst' \
