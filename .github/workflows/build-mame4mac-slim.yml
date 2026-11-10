@@ -4,7 +4,15 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+env:
+  APP_NAME: MAME4mac-slim
+  ORG_ID: com.getguruhat
+  # MAME core pinned so later upstream changes can't break the build
+  MAME_REF: 16a0405c14e96e9a106fab98aabcaaf9ae6ffe75
+  # software-list files kept in hash.zip (only what the kept drivers use)
+  KEEP_HASH: neogeo.xml neocd.xml megaplay.xml nss.xml
 
 jobs:
   build:
@@ -15,15 +23,17 @@ jobs:
         with:
           path: MAME4iOS
 
-      - name: Checkout slim MAME core
+      - name: Checkout slim MAME core (pinned)
         uses: actions/checkout@v4
         with:
           repository: getguruhat/mame
+          ref: ${{ env.MAME_REF }}
           path: MAME
 
       - name: Build slim libmame (arm64 Mac Catalyst)
         working-directory: MAME
         run: |
+          set -o pipefail
           cp keep-drivers.flt slim.flt
           ./make-ios.sh mac-catalyst-arm64 SOURCEFILTER=slim.flt
           cp libmame-mac-arm64.a libmame-mac.a
@@ -33,29 +43,57 @@ jobs:
         working-directory: MAME4iOS
         run: |
           set -o pipefail
-          # newer MAME core dropped 7z listing (#if 0 in iosmain.cpp); add a weak stub so the app links
+          # newer MAME core dropped 7z listing (#if 0 in iosmain.cpp); weak stub so the app links
           cat >> xcode/MAME4iOS/ZipFile.m <<'STUB'
 
           __attribute__((weak)) int myosd_enumerate_7z(const char* path, int load_data_flag, void* callback_ptr, void (*callback)(void* callback_ptr, const uint16_t* name, size_t len, const uint8_t* data, size_t size)) { return -1; }
           STUB
           # no iCloud entitlement in an unsigned build: CloudKit traps at launch, so disable cloud sync
           sed -i '' 's|^+(void)updateCloudStatus {|+(void)updateCloudStatus { _status = CloudSyncStatusNotEntitled; return;|' xcode/MAME4iOS/CloudSync.m
-          grep -n 'updateCloudStatus {' xcode/MAME4iOS/CloudSync.m
-          printf 'MAMELIB = libmame\n' > xcode/MAME4iOS/Developer.xcconfig
+          printf 'MAMELIB = libmame\nORG_IDENTIFIER = %s\n' "$ORG_ID" > xcode/MAME4iOS/Developer.xcconfig
           xcodebuild -project MAME4iOS.xcodeproj -scheme "MAME4iOS Release" \
             -destination 'platform=macOS,variant=Mac Catalyst' \
             -derivedDataPath build ARCHS=arm64 ONLY_ACTIVE_ARCH=NO \
+            DEAD_CODE_STRIPPING=YES DEPLOYMENT_POSTPROCESSING=YES STRIP_INSTALLED_PRODUCT=YES \
+            STRIP_STYLE=all COPY_PHASE_STRIP=YES \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
             build 2>&1 | tail -60
-          APP=$(find build/Build/Products -maxdepth 2 -name '*.app' | head -1)
-          echo "APP=$APP"
-          codesign --force --deep --sign - "$APP"
-          du -sh "$APP"
-          ditto -c -k --keepParent "$APP" ../MAME4mac-slim.zip
-          ls -lh ../MAME4mac-slim.zip
+
+      - name: Trim, rename, sign, zip
+        run: |
+          set -e
+          APP=$(find MAME4iOS/build/Build/Products -maxdepth 2 -name '*.app' | head -1)
+          RES="$APP/Contents/Resources"
+          echo "before: $(du -sh "$APP" | cut -f1)"
+          # strip the executable further (global symbols the app doesn't need to export)
+          strip -x "$APP/Contents/MacOS/MAME4iOS" || true
+          # cheat.zip is the legacy (MAME 0.139) cheat pack; the current core uses cheat.7z
+          rm -f "$RES/cheat.zip"
+          # keep only the software lists the kept drivers use
+          mkdir -p /tmp/hash && cd /tmp/hash && unzip -q "$GITHUB_WORKSPACE/$RES/hash.zip"
+          for f in *; do case " $KEEP_HASH " in *" $f "*) ;; *) rm -rf "$f";; esac; done
+          ls
+          rm "$GITHUB_WORKSPACE/$RES/hash.zip"
+          zip -q -r "$GITHUB_WORKSPACE/$RES/hash.zip" .
+          cd "$GITHUB_WORKSPACE"
+          # name
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName MAME4mac Slim" "$APP/Contents/Info.plist" || true
+          mv "$APP" "$APP_NAME.app"
+          codesign --force --deep --sign - "$APP_NAME.app"
+          echo "after: $(du -sh "$APP_NAME.app" | cut -f1)"
+          ditto -c -k --keepParent "$APP_NAME.app" "$APP_NAME.zip"
+          ls -lh "$APP_NAME.zip"
 
       - uses: actions/upload-artifact@v4
         with:
           name: MAME4mac-slim
-          path: MAME4mac-slim.zip
+          path: ${{ env.APP_NAME }}.zip
           if-no-files-found: error
+
+      - name: Draft release (not public until you publish it)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "slim-${{ github.run_number }}" "$APP_NAME.zip" --draft --repo "$GITHUB_REPOSITORY" \
+            --title "MAME4mac Slim build ${{ github.run_number }}" \
+            --notes "Unsigned arm64 build with only the drivers listed in keep-drivers.flt. Right-click > Open the first time."

@@ -114,9 +114,9 @@
         _animatedButtons = 1;
         
 #if TARGET_OS_MACCATALYST
-        _fullscreenLandscape= 0;
+        _fullscreenLandscape= 1;   // slim build: game fills the window
         _fullscreenPortrait = 0;
-        _fullscreenJoystick = 0;
+        _fullscreenJoystick = 0;   // slim build: no on-screen joystick/buttons
 #else
         _fullscreenLandscape= 1;
         _fullscreenPortrait = 0;
@@ -131,7 +131,11 @@
         _soundValue = 5;
 
         _sticktype = 0;
+#if TARGET_OS_MACCATALYST
+        _numbuttons = 1;   // "0 Buttons" in fullscreen
+#else
         _numbuttons = 0;
+#endif
         _aplusb = 0;
         _cheats = 1;
         
@@ -208,7 +212,7 @@
         
         _fullscreenLandscape =  [([optionsDict objectForKey:@"fullLand"] ?: @(1)) intValue];
         _fullscreenPortrait  =  [([optionsDict objectForKey:@"fullPort"] ?: @(0)) intValue];
-        _fullscreenJoystick  =  [([optionsDict objectForKey:@"fullJoy"]  ?: @(1)) intValue];
+        _fullscreenJoystick  =  [([optionsDict objectForKey:@"fullJoy"]  ?: @(TARGET_OS_MACCATALYST ? 0 : 1)) intValue];
 
         _turboXEnabled = [[optionsDict objectForKey:@"turboXEnabled"] intValue];
         _turboYEnabled = [[optionsDict objectForKey:@"turboYEnabled"] intValue];
@@ -226,7 +230,7 @@
         _soundValue =  [([optionsDict objectForKey:@"soundValue"] ?: @(5)) intValue];
         
         _sticktype  =  [[optionsDict objectForKey:@"sticktype"] intValue];
-        _numbuttons  =  [[optionsDict objectForKey:@"numbuttons"] intValue];
+        _numbuttons  =  [([optionsDict objectForKey:@"numbuttons"] ?: @(TARGET_OS_MACCATALYST ? 1 : 0)) intValue];   // 1 = "0 Buttons"
         _aplusb  =  [[optionsDict objectForKey:@"aplusb"] intValue];
         _cheats  =  [[optionsDict objectForKey:@"cheats"] intValue];
         

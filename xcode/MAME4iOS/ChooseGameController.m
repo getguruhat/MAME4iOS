@@ -654,6 +654,10 @@ typedef NS_ENUM(NSInteger, LayoutMode) {
     if (self.hideConsoles) {
         filteredGames = [filteredGames filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"NOT (gameType == %@ AND gameSystem == '')", kGameInfoTypeConsole]];
     }
+    // slim build: new MAME cores list BIOS machines (eg "Mega Play BIOS") as plain Arcade, so also hide by name
+    if (self.hideConsoles) {
+        filteredGames = [filteredGames filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"NOT (gameDescription ENDSWITH[c] ' BIOS')"]];
+    }
     
     // group games by category into sections
     NSMutableDictionary* gameData = [[NSMutableDictionary alloc] init];
