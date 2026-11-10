@@ -32,6 +32,12 @@ jobs:
       - name: Build the app
         working-directory: MAME4iOS
         run: |
+          set -o pipefail
+          # newer MAME core dropped 7z listing (#if 0 in iosmain.cpp); add a weak stub so the app links
+          cat >> xcode/MAME4iOS/ZipFile.m <<'STUB'
+
+__attribute__((weak)) int myosd_enumerate_7z(const char* path, int load_data_flag, void* callback_ptr, void (*callback)(void* callback_ptr, const uint16_t* name, size_t len, const uint8_t* data, size_t size)) { return -1; }
+STUB
           printf 'MAMELIB = libmame\n' > xcode/MAME4iOS/Developer.xcconfig
           xcodebuild -project MAME4iOS.xcodeproj -scheme "MAME4iOS Release" \
             -destination 'platform=macOS,variant=Mac Catalyst' \
