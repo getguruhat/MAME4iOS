@@ -17,23 +17,10 @@ This is an unofficial build. MAME is a trademark of its owner. Source is GPL-2.0
 
 ---
 
-# MAME4iOS
+Based on MAME4iOS by David Valdeita (Seleuco), with updates by Les Bird, Yoshi Sugawara and Todd Laney, and on MAME by the MAME team. Forked from [ToddLa/MAME4iOS](https://github.com/ToddLa/MAME4iOS).
 
-Original Author: David Valdeita (Seleuco)  
-
-This is a port of MAME for iOS, iPadOS, tvOS and macOS. MAME4iOS is designed to run for modern iOS and macOS platforms, including support for the latest Apple technology platform enhancments such as Metal graphics and the M1 processor.
-
-[Download IPAs for iOS and tvOS here](https://github.com/yoshisuga/MAME4iOS/releases)
-
-[Chat on Discord!](https://discord.gg/ZC6wkmU)
-
-[See what's new](WHATSNEW.md)
-
-## Screenshots
-
-![iPhone Screenshot](README.images/screenshot-iphone-small.jpg)
-![AppleTV Screenshot](README.images/screenshot-atv-small.png)
-![macOS Screenshot](README.images/screenshot-mac.png)
+<details>
+<summary>Original MAME4iOS README</summary>
 
 ## Summary
 
@@ -313,3 +300,5 @@ Also in Settings -> Game Input, you'll find a section called "Touch Analog" and 
 ## License
 
 MAME4iOS is distributed under the terms of the GNU General Public License, 2 (GPL-2.0).
+
+</details>
