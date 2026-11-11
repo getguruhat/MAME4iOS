@@ -56,6 +56,8 @@
 #import "ZipFile.h"
 
 #include <sys/stat.h>
+#include <pwd.h>
+#include <unistd.h>
 
 const char* get_resource_path(const char* file)
 {
@@ -64,11 +66,35 @@ const char* get_resource_path(const char* file)
     return resource_path;
 }
 
+#if TARGET_OS_MACCATALYST
+// Mac: keep everything in one folder instead of dumping it in ~/Documents.
+// Default is ~/Games/MAME; override with: defaults write <bundle id> MameRootFolder /some/path
+static NSString* mame_root_folder(void)
+{
+    static NSString* root;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        NSString* custom = [NSUserDefaults.standardUserDefaults stringForKey:@"MameRootFolder"];
+        if (custom.length != 0) {
+            root = custom.stringByExpandingTildeInPath;
+        } else {
+            struct passwd* pw = getpwuid(getuid());
+            NSString* home = pw ? @(pw->pw_dir) : NSHomeDirectory();
+            root = [home stringByAppendingPathComponent:@"Games/MAME"];
+        }
+        [NSFileManager.defaultManager createDirectoryAtPath:root withIntermediateDirectories:YES attributes:nil error:nil];
+    });
+    return root;
+}
+#endif
+
 const char* get_documents_path(const char* file)
 {
     static char documents_path[1024];
     
-#if TARGET_OS_IOS
+#if TARGET_OS_MACCATALYST
+    NSString *path = mame_root_folder();
+#elif TARGET_OS_IOS
     NSString *path = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
 #elif TARGET_OS_TV
     NSString *path = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject;

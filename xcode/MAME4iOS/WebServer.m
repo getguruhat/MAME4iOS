@@ -7,6 +7,7 @@
 //
 
 #import "WebServer.h"
+#import "Globals.h"
 
 @implementation WebServer
 
@@ -25,7 +26,9 @@
 
 -(instancetype)init {
     if ( self = [super init] ) {
-#if TARGET_OS_IOS
+#if TARGET_OS_MACCATALYST
+        NSString* docsPath = getDocumentPath(@"").stringByStandardizingPath;
+#elif TARGET_OS_IOS
         NSString* docsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
 #elif TARGET_OS_TV
         NSString* docsPath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];

@@ -7,6 +7,7 @@
 //
 
 #import "GameInfo.h"
+#import "Globals.h"
 
 @implementation GameInfo
 {
@@ -220,7 +221,9 @@
     if (self.gameIsMame)
         return [[NSBundle mainBundle] URLForResource:name withExtension:@"png"];
     
-#if TARGET_OS_IOS
+#if TARGET_OS_MACCATALYST
+    NSString *path = getDocumentPath(@"").stringByStandardizingPath;
+#elif TARGET_OS_IOS
     NSString *path = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
 #elif TARGET_OS_TV
     NSString *path = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject;
@@ -277,7 +280,9 @@
 // get the sidecar file used to store custom metadata/info
 -(NSString*) gameMetadataFile
 {
-#if TARGET_OS_IOS
+#if TARGET_OS_MACCATALYST
+    NSString *root = getDocumentPath(@"").stringByStandardizingPath;
+#elif TARGET_OS_IOS
     NSString *root = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
 #elif TARGET_OS_TV
     NSString *root = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject;
