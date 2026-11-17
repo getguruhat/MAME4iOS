@@ -68,7 +68,7 @@ const char* get_resource_path(const char* file)
 
 #if TARGET_OS_MACCATALYST
 // Mac: keep everything in one folder instead of dumping it in ~/Documents.
-// Default is ~/Games/MAME; override with: defaults write <bundle id> MameRootFolder /some/path
+// Default is /Users/andre/MAME; override with: defaults write <bundle id> MameRootFolder /some/path
 static NSString* mame_root_folder(void)
 {
     static NSString* root;
@@ -78,9 +78,8 @@ static NSString* mame_root_folder(void)
         if (custom.length != 0) {
             root = custom.stringByExpandingTildeInPath;
         } else {
-            struct passwd* pw = getpwuid(getuid());
-            NSString* home = pw ? @(pw->pw_dir) : NSHomeDirectory();
-            root = [home stringByAppendingPathComponent:@"Games/MAME"];
+            // Fixed default location for all MAME files (roms, saves, cfg, etc).
+            root = @"/Users/andre/MAME";
         }
         [NSFileManager.defaultManager createDirectoryAtPath:root withIntermediateDirectories:YES attributes:nil error:nil];
     });
