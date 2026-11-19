@@ -456,6 +456,10 @@ int run_mame(char* system, char* type, char* game, char* options)
     // 2xx: -plugin hiscore OR nada
     if (is139)
         ARG(g_pref_hiscore ? "-hiscore" : "-nohiscore");
+    else if (g_pref_hiscore && g_pref_cheat)
+        ARG2("-plugin", "hiscore,cheat");   // the cheat plugin gives the Cheat menu (Game Genie, Action Replay, cheat.simple)
+    else if (g_pref_cheat)
+        ARG2("-plugin", "cheat");
     else if (g_pref_hiscore)
         ARG2("-plugin", "hiscore");
          

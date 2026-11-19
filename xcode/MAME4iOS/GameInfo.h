@@ -34,6 +34,7 @@
 #define kGameInfoFile           @"file"
 #define kGameInfoMediaType      @"media"
 #define kGameInfoCustomCmdline  @"cmdline"
+#define kGameInfoROMName        @"romname"          // exact (No-Intro style) name of the ROM inside a software file, used to find cover art
 
 #define kGameInfoTypeArcade     @"Arcade"
 #define kGameInfoTypeConsole    @"Console"

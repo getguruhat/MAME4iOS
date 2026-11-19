@@ -528,6 +528,19 @@ typedef NS_ENUM(NSInteger, LayoutMode) {
         if (system != nil) {
             info[kGameInfoSystem] = system;
             info[kGameInfoMediaType] = @"cart";
+            
+            // find the exact ROM name, for cover art lookup. zip files: the first ROM inside, else the file name.
+            __block NSString* romname = file.lastPathComponent.stringByDeletingPathExtension;
+            if ([ext isEqualToString:@"zip"]) {
+                __block BOOL found = FALSE;
+                [ZipFile enumerate:getDocumentPath(file) withOptions:ZipFileEnumFiles usingBlock:^(ZipFileInfo* zip) {
+                    if (!found && [@[@"nes", @"sfc", @"smc", @"fig", @"swc", @"bin"] containsObject:zip.name.pathExtension.lowercaseString]) {
+                        romname = zip.name.lastPathComponent.stringByDeletingPathExtension;
+                        found = TRUE;
+                    }
+                }];
+            }
+            info[kGameInfoROMName] = romname;
         }
 
         GameInfo* game = [[GameInfo alloc] initWithDictionary:info];

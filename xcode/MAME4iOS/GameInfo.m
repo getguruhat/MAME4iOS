@@ -178,6 +178,23 @@
             [NSURL URLWithString:[NSString stringWithFormat:@"%@/titles/%@.png", base, name]],
         ];
    }
+   else if (self.gameIsSoftware && self.gameSystem.length != 0 && [@[@"nes", @"famicom", @"snes"] containsObject:self.gameSystem] && (dict[kGameInfoROMName] ?: self.gameDescription).length != 0) {
+        /// slim build: NES / SNES cover art from the libretro thumbnails project, by exact ROM name
+        /// https://raw.githubusercontent.com/libretro-thumbnails/Nintendo_-_Nintendo_Entertainment_System/master/Named_Boxarts/Contra%20(USA).png
+        NSString* repo = [self.gameSystem isEqualToString:@"snes"] ? @"Nintendo_-_Super_Nintendo_Entertainment_System" : @"Nintendo_-_Nintendo_Entertainment_System";
+        NSString* name = dict[kGameInfoROMName] ?: self.gameDescription;
+        
+        /// from [libretro docs](https://docs.libretro.com/guides/roms-playlists-thumbnails/)
+        for (NSString* str in @[@"&", @"*", @"/", @":", @"`", @"<", @">", @"?", @"\\", @"|"])
+            name = [name stringByReplacingOccurrencesOfString:str withString:@"_"];
+        name = [name stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLPathAllowedCharacterSet];
+        
+        NSString* base = [NSString stringWithFormat:@"https://raw.githubusercontent.com/libretro-thumbnails/%@/master", repo];
+        return @[
+            [NSURL URLWithString:[NSString stringWithFormat:@"%@/Named_Boxarts/%@.png", base, name]],
+            [NSURL URLWithString:[NSString stringWithFormat:@"%@/Named_Titles/%@.png", base, name]],
+        ];
+   }
    else if (self.gameIsSoftware) {
         // NOTE if software has an icon, it will have a software list name, and will get handled above
         return @[];
