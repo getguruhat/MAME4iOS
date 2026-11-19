@@ -3463,6 +3463,10 @@ void m4i_input_poll(myosd_input_state* myosd, size_t input_size) {
         else
             aspect = CGSizeMake(myosd_width, myosd_height);
 
+        // slim build: NES and SNES pictures are 4:3 on a TV (non-square pixels, and the SNES often reports a 512 wide buffer), so always use 4:3
+        if ([@[@"nes", @"nespal", @"famicom", @"snes", @"snespal"] containsObject:g_mame_game_info.gameSystem])
+            aspect = CGSizeMake(4, 3);
+
         //        r = AVMakeRectWithAspectRatioInsideRect(aspect, r);
         //        r.origin.x    = floor(r.origin.x * scale) / scale;
         //        r.origin.y    = floor(r.origin.y * scale) / scale;
