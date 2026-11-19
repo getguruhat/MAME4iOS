@@ -10,9 +10,9 @@ env:
   APP_NAME: MAME4mac-slim
   ORG_ID: com.getguruhat
   # MAME core pinned so later upstream changes can't break the build
-  MAME_REF: 16a0405c14e96e9a106fab98aabcaaf9ae6ffe75
+  MAME_REF: ff894c1d4c5cd683c0fede5019dcf6b8b2952d5b
   # software-list files kept in hash.zip (only what the kept drivers use)
-  KEEP_HASH: neogeo.xml neocd.xml megaplay.xml nss.xml
+  KEEP_HASH: neogeo.xml neocd.xml megaplay.xml nss.xml nes*.xml famicom*.xml snes*.xml
 
 jobs:
   build:
@@ -71,7 +71,7 @@ jobs:
           rm -f "$RES/cheat.zip"
           # keep only the software lists the kept drivers use
           mkdir -p /tmp/hash && cd /tmp/hash && unzip -q "$GITHUB_WORKSPACE/$RES/hash.zip"
-          for f in *; do case " $KEEP_HASH " in *" $f "*) ;; *) rm -rf "$f";; esac; done
+          for f in *; do keep=0; for p in $KEEP_HASH; do case "$f" in $p) keep=1;; esac; done; [ $keep = 1 ] || rm -rf "$f"; done
           ls
           rm "$GITHUB_WORKSPACE/$RES/hash.zip"
           zip -q -r "$GITHUB_WORKSPACE/$RES/hash.zip" .
