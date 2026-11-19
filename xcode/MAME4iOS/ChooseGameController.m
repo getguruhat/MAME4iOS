@@ -507,12 +507,30 @@ typedef NS_ENUM(NSInteger, LayoutMode) {
         NSString* name = file.lastPathComponent.stringByDeletingPathExtension;
         name = [name componentsSeparatedByCharactersInSet:[NSCharacterSet alphanumericCharacterSet].invertedSet].firstObject;
 
-        GameInfo* game = [[GameInfo alloc] initWithDictionary:@{
+        NSMutableDictionary* info = [@{
             kGameInfoType:kGameInfoTypeSoftware,
             kGameInfoFile:file,
             kGameInfoName:name,
             kGameInfoDescription:file.lastPathComponent.stringByDeletingPathExtension
-        }];
+        } mutableCopy];
+
+        // slim build: tag NES and SNES software so it gets its own section and launches on the right system.
+        // system comes from the sub-folder (software/nes/..., software/snes/...) or the file extension.
+        NSString* folder = soft.pathComponents.count > 1 ? soft.pathComponents.firstObject.lowercaseString : @"";
+        NSString* ext = file.pathExtension.lowercaseString;
+        NSString* system = nil;
+        if ([@[@"nes", @"famicom", @"snes"] containsObject:folder])
+            system = folder;
+        else if ([ext isEqualToString:@"nes"])
+            system = @"nes";
+        else if ([@[@"sfc", @"smc"] containsObject:ext])
+            system = @"snes";
+        if (system != nil) {
+            info[kGameInfoSystem] = system;
+            info[kGameInfoMediaType] = @"cart";
+        }
+
+        GameInfo* game = [[GameInfo alloc] initWithDictionary:info];
         
         // add any user custom metadata from sidecar
         [game gameLoadMetadata];
@@ -696,6 +714,12 @@ typedef NS_ENUM(NSInteger, LayoutMode) {
         if (key != (void*)kGameInfoYear)
             section = [section stringByTrimmingCharactersInSet:[NSCharacterSet punctuationCharacterSet]];
         
+        // slim build: show NES / SNES software as its own section instead of lumping it in "Software"
+        if (key == (void*)kGameInfoType && game.gameIsSoftware && game.gameSystem.length != 0) {
+            NSDictionary* names = @{@"nes":@"NES", @"famicom":@"Famicom", @"snes":@"SNES"};
+            section = names[game.gameSystem] ?: section;
+        }
+
         // if we dont have a parent, we are our own parent!
         if (key == (void*)kGameInfoParent && [section length] <= 1)
             section = game.gameName;
