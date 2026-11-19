@@ -35,6 +35,8 @@ jobs:
         run: |
           set -o pipefail
           cp keep-drivers.flt slim.flt
+          # Xcode 27 libc++ rejects the old iOS 13.4 Catalyst target; build for 16.0 instead
+          sed -i '' 's/^VERSION_MIN=13.4/VERSION_MIN=16.0/' make-ios.sh
           ./make-ios.sh mac-catalyst-arm64 SOURCEFILTER=slim.flt
           cp libmame-mac-arm64.a libmame-mac.a
           ls -lh libmame-mac.a
@@ -54,7 +56,7 @@ jobs:
           xcodebuild -project MAME4iOS.xcodeproj -scheme "MAME4iOS Release" \
             -destination 'platform=macOS,variant=Mac Catalyst' \
             -derivedDataPath build ARCHS=arm64 ONLY_ACTIVE_ARCH=NO \
-            DEAD_CODE_STRIPPING=YES DEPLOYMENT_POSTPROCESSING=YES STRIP_INSTALLED_PRODUCT=YES \
+            IPHONEOS_DEPLOYMENT_TARGET=16.0 DEAD_CODE_STRIPPING=YES DEPLOYMENT_POSTPROCESSING=YES STRIP_INSTALLED_PRODUCT=YES \
             STRIP_STYLE=all COPY_PHASE_STRIP=YES \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
             build 2>&1 | tail -60
