@@ -225,6 +225,9 @@ NSArray* g_import_file_types;
 
 	hrViewController = [[EmulatorController alloc] init];
 	
+#if TARGET_OS_IOS
+    // iOS/Catalyst: the window is created in scene:willConnectToSession:options: (UIScene lifecycle, required by the iOS 27 / macOS 27 SDK)
+#else
 	deviceWindow = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
 #if TARGET_OS_TV
     deviceWindow.backgroundColor = [UIColor colorWithWhite:0.111 alpha:1.0];
@@ -234,6 +237,7 @@ NSArray* g_import_file_types;
     
     [hrViewController startEmulation];
 	[deviceWindow makeKeyAndVisible];
+#endif
         
     [UIApplication sharedApplication].idleTimerDisabled = YES;
 	 
@@ -352,6 +356,70 @@ NSArray* g_import_file_types;
 - (void)application:(UIApplication *)application performActionForShortcutItem:(UIApplicationShortcutItem *)shortcutItem completionHandler:(void (^)(BOOL))completionHandler {
     NSLog(@"performActionForShortcutItem: %@ %@", shortcutItem.type, shortcutItem.userInfo);
     completionHandler([self performActivity:shortcutItem.type userInfo:shortcutItem.userInfo]);
+}
+#endif
+
+#if TARGET_OS_IOS
+// MARK: UIScene lifecycle
+// NOTE UIKit creates a *separate* instance of the scene delegate class, so always go through the app delegate instance, that owns hrViewController.
+
+static Bootstrapper* AppDelegate(void) {
+    return (Bootstrapper*)UIApplication.sharedApplication.delegate;
+}
+
+- (void)scene:(UIScene *)scene willConnectToSession:(UISceneSession *)session options:(UISceneConnectionOptions *)connectionOptions {
+    
+    if (![scene isKindOfClass:[UIWindowScene class]])
+        return;
+    
+    Bootstrapper* app = AppDelegate();
+    
+    // were we launched with a game URL (mame4ios://...)? if so set that as the game to restore.
+    for (UIOpenURLContext* context in connectionOptions.URLContexts) {
+        GameInfo* game = [[GameInfo alloc] initWithURL:context.URL];
+        if (game != nil) {
+            [EmulatorController setCurrentGame:game];
+            break;
+        }
+    }
+
+    app->deviceWindow = [[UIWindow alloc] initWithWindowScene:(UIWindowScene*)scene];
+    app.window = app->deviceWindow;
+    [app->deviceWindow setRootViewController:app->hrViewController];
+    
+    [app->hrViewController startEmulation];
+    [app->deviceWindow makeKeyAndVisible];
+    
+    // handle any other (file) URLs we were launched with
+    for (UIOpenURLContext* context in connectionOptions.URLContexts)
+        [self scene:scene openURLContexts:[NSSet setWithObject:context]];
+}
+
+- (void)scene:(UIScene *)scene openURLContexts:(NSSet<UIOpenURLContext *> *)URLContexts {
+    for (UIOpenURLContext* context in URLContexts) {
+        NSDictionary* options = @{UIApplicationOpenURLOptionsOpenInPlaceKey:@(context.options.openInPlace)};
+        [AppDelegate() application:UIApplication.sharedApplication openURL:context.URL options:options];
+    }
+}
+
+- (void)scene:(UIScene *)scene continueUserActivity:(NSUserActivity *)userActivity {
+    NSLog(@"scene continueUserActivity: %@ %@", userActivity.activityType, userActivity.userInfo);
+    [AppDelegate() performActivity:userActivity.activityType userInfo:userActivity.userInfo];
+}
+
+#if !TARGET_OS_MACCATALYST
+- (void)windowScene:(UIWindowScene *)windowScene performActionForShortcutItem:(UIApplicationShortcutItem *)shortcutItem completionHandler:(void (^)(BOOL))completionHandler {
+    NSLog(@"scene performActionForShortcutItem: %@ %@", shortcutItem.type, shortcutItem.userInfo);
+    completionHandler([AppDelegate() performActivity:shortcutItem.type userInfo:shortcutItem.userInfo]);
+}
+#endif
+
+- (void)sceneDidEnterBackground:(UIScene *)scene {
+    [AppDelegate()->hrViewController enterBackground];
+}
+
+- (void)sceneWillEnterForeground:(UIScene *)scene {
+    [AppDelegate()->hrViewController enterForeground];
 }
 #endif
 

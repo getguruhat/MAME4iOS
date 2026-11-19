@@ -45,10 +45,16 @@
 #import "EmulatorController.h"
 #import <UIKit/UIScreen.h>
 
+#if TARGET_OS_IOS
+@interface Bootstrapper : UIResponder <UIApplicationDelegate, UIWindowSceneDelegate>  {
+#else
 @interface Bootstrapper : UIResponder <UIApplicationDelegate>  {
+#endif
 	UIWindow		    *deviceWindow;
 	UIWindow            *externalWindow;
 	EmulatorController	*hrViewController;
 }
+
+@property (nonatomic, strong) UIWindow *window;
 
 @end

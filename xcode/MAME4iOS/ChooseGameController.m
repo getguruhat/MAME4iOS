@@ -714,11 +714,6 @@ typedef NS_ENUM(NSInteger, LayoutMode) {
         if (key != (void*)kGameInfoYear)
             section = [section stringByTrimmingCharactersInSet:[NSCharacterSet punctuationCharacterSet]];
         
-        // slim build: show NES / SNES software as its own section instead of lumping it in "Software"
-        if (key == (void*)kGameInfoType && game.gameIsSoftware && game.gameSystem.length != 0) {
-            NSDictionary* names = @{@"nes":@"NES", @"famicom":@"Famicom", @"snes":@"SNES"};
-            section = names[game.gameSystem] ?: section;
-        }
 
         // if we dont have a parent, we are our own parent!
         if (key == (void*)kGameInfoParent && [section length] <= 1)
@@ -729,6 +724,16 @@ typedef NS_ENUM(NSInteger, LayoutMode) {
 
         if ([section length] == 0 && key == (void*)kGameInfoSystem)
             section = game.gameType;
+
+        // slim build: show NES / SNES software as its own section (by Type or System) instead of lumping it in "Software"
+        BOOL consoleSoftware = FALSE;
+        if ((key == (void*)kGameInfoType || key == (void*)kGameInfoSystem) && game.gameIsSoftware && game.gameSystem.length != 0) {
+            NSString* name = @{@"nes":@"NES", @"famicom":@"Famicom", @"snes":@"SNES"}[game.gameSystem];
+            if (name != nil) {
+                section = name;
+                consoleSoftware = TRUE;
+            }
+        }
 
         if ([section length] != 0 && key == (void*)kGameInfoSoftwareList)
             section = [SoftwareList.sharedInstance getSoftwareListDescription:section] ?: section;
@@ -749,7 +754,7 @@ typedef NS_ENUM(NSInteger, LayoutMode) {
             sections = @[section];
         
         // put software that is assigned a system in generic Software section also
-        if (key == (void*)kGameInfoSystem && game.gameIsSoftware && game.gameSystem.length != 0)
+        if (key == (void*)kGameInfoSystem && game.gameIsSoftware && game.gameSystem.length != 0 && !consoleSoftware)
             sections = @[section, kGameInfoTypeSoftware];
         if (key == (void*)kGameInfoSoftwareList && game.gameIsSoftware && game.gameSoftwareList.length != 0)
             sections = @[section, kGameInfoTypeSoftware];
